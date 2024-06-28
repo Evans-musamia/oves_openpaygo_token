@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Decoder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Token Decoder</h1>
+        <form id="tokenForm">
+            <label for="token">Token:</label>
+            <input type="text" id="token" name="token" required>
+            <button type="button" onclick="decodeToken()">Decode Token</button>
+        </form>
+        <div id="response" class="response"></div>
+    </div>
+
+    <script>
+        // Function to translate token type numeric identifiers into descriptive names
+        function getTokenTypeDescription(type) {
+            switch (type) {
+                case 1: return "Add Time";
+                case 2: return "Set Time";
+                case 3: return "Disable PAYG";
+                case 4: return "Counter Sync";
+                case 10: return "Invalid";
+                case 11: return "Already Used";
+                default: return "Unknown Type"; // Default case for unexpected values
+            }
+        }
+    
+        // Function to decode the token by making an API request to the server
+        function decodeToken() {
+            var token = document.getElementById("token").value; // Get the token from the input field
+            var requestData = { token: token }; // Prepare request data
+    
+            // Perform the fetch operation to your FastAPI endpoint
+            fetch("http://127.0.0.1:8000/decode-token/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json" // Specify the content type as JSON
+                },
+                body: JSON.stringify(requestData) // Convert the JavaScript object to a JSON string
+            })
+            .then(response => response.json()) // Parse the JSON response
+            .then(data => {
+                var responseDiv = document.getElementById("response"); // Get the div where you want to show the response
+    
+                // Handle potential `null` values in the response
+                let decodedValueMessage = (data['Decoded Value'] !== null) ? data['Decoded Value'] : "N/A";
+                let decodedCountMessage = (data['Decoded Count'] !== null) ? data['Decoded Count'] : "N/A";
+    
+                // Get the descriptive name for the token type
+                let tokenTypeDescription = getTokenTypeDescription(data['Token Type']);
+    
+                // Display the results in the HTML
+                responseDiv.innerHTML = `<p><strong>Token:</strong> ${data.Token}</p>` +
+                    `<p><strong>Decoded Value:</strong> ${decodedValueMessage}</p>` +
+                    `<p><strong>Token Type:</strong> ${tokenTypeDescription}</p>` +
+                    `<p><strong>Decoded Count:</strong> ${decodedCountMessage}</p>`;
+            })
+            .catch(error => {
+                console.error("Error:", error); // Log errors to the console
+                document.getElementById("response").innerHTML = "<p style='color: red;'>Error occurred. Please try again.</p>"; // Show error in UI
+            });
+        }
+    </script>
+    
+</body>
+</html>

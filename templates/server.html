@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenToken</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 50px auto; padding: 20px; background-color: #fff; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1, h2 { text-align: center; }
+        form, .form-like { display: flex; flex-direction: column; }
+        label, input, button { margin-bottom: 10px; }
+        input, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .hidden { display: none; }
+        .response { margin-top: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Token Generation Server</h1>
+    <div class="form-like" id="tokenForm">
+        <label for="oemId">OEM ID:</label>
+        <input type="text" id="oemId" name="oemId" required>
+        <label for="value">Value:</label>
+        <input type="number" id="value" name="value" required>
+        <button onclick="operateToken()">Operate Token</button>
+        <button onclick="fetchLatestRecord()">Fetch Latest Record</button>
+        <button onclick="toggleInitializationForm()">Initialization</button>
+    </div>
+    <div id="initializationForm" class="hidden">
+        <h2>Initialization Form</h2>
+        <label for="initOemItemId">OEM Item ID:</label>
+        <input type="text" id="initOemItemId" required>
+        <label for="secretKey">Secret Key:</label>
+        <input type="text" id="secretKey" required>
+        <label for="initialToken">Initial Token:</label>
+        <input type="text" id="initialToken" required>
+        <label for="tokenType">Token Type:</label>
+        <input type="number" id="tokenType" required>
+        <label for="tokenValue">Token Value:</label>
+        <input type="number" id="tokenValue" required>
+        <label for="tokenCount">Token Count:</label>
+        <input type="number" id="tokenCount" required>
+        <button onclick="submitInitialization()">Initialize Product</button>
+    </div>
+    <div id="response" class="response hidden"></div>
+</div>
+
+<script>
+function toggleInitializationForm() {
+    var form = document.getElementById('initializationForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitInitialization() {
+    var initRequest = {
+        oem_item_id: document.getElementById('initOemItemId').value,
+        secret_key: document.getElementById('secretKey').value,
+        initial_token: document.getElementById('initialToken').value,
+        token_type: parseInt(document.getElementById('tokenType').value, 10),
+        token_value: parseInt(document.getElementById('tokenValue').value, 10),
+        token_count: parseInt(document.getElementById('tokenCount').value, 10),
+    };
+
+    fetch("/initialize_product/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(initRequest)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('response').innerHTML = '<p>' + data.message + '</p>';
+        document.getElementById('response').classList.remove('hidden');
+        toggleInitializationForm();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('response').innerHTML = '<p style="color: red;">Error occurred. Please try again.</p>';
+        document.getElementById('response').classList.remove('hidden');
+    });
+}
+
+function operateToken() {
+    var tokenRequest = {
+        oem_item_id: document.getElementById('oemId').value,
+        value: parseInt(document.getElementById('value').value, 10)
+    };
+
+    fetch("/operate_token/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tokenRequest)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('response').innerHTML = `<p><strong>Generated Token:</strong> ${data.generated_token}</p>
+                                                        <p><strong>Token Type:</strong> ${data.token_type}</p>
+                                                        <p><strong>Value:</strong> ${data.value}</p>
+                                                        <p><strong>Generated Count:</strong> ${data.generated_count}</p>`;
+        document.getElementById('response').classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('response').innerHTML = '<p style="color: red;">Error occurred. Please try again.</p>';
+        document.getElementById('response').classList.remove('hidden');
+    });
+}
+
+function fetchLatestRecord() {
+    var oemId = document.getElementById('oemId').value;  // Get OEM ID from the input field
+    if (!oemId) {
+        document.getElementById('response').innerHTML = '<p style="color: red;">Please provide an OEM ID.</p>';
+        document.getElementById('response').classList.remove('hidden');
+        return;
+    }
+    fetch(`/fetch_latest_record/?oem_id=${encodeURIComponent(oemId)}`)  // Use OEM ID in the fetch URL
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('response').innerHTML = `<p><strong>OEM ID:</strong> ${data.oem_item_id}</p>
+                                                        <p><strong>Last Token:</strong> ${data.last_token}</p>
+                                                        <p><strong>Token Type:</strong> ${data.token_type}</p>
+                                                        <p><strong>Last Value:</strong> ${data.last_value}</p>
+                                                        <p><strong>Last Count:</strong> ${data.last_count}</p>
+                                                        <p><strong>Secret Key:</strong> ${data.secret_key}</p>`;
+        document.getElementById('response').classList.remove('hidden');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('response').innerHTML = '<p style="color: red;">Error occurred. Please try again.</p>';
+        document.getElementById('response').classList.remove('hidden');
+    });
+}
+</script>
+</body>
+</html>
