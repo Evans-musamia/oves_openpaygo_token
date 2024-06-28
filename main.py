@@ -307,8 +307,7 @@ async def initialize_product(request: ProductInitRequest):
     decoded_secret_key = OpenPAYGOTokenShared.load_secret_key_from_hex(request.secret_key)
     initial_token = OpenPAYGOTokenShared.generate_starting_code(decoded_secret_key)
     
-    # Insert the new product data into the database
-    print("Received request data:", request.json())
+
 
     # Update the token data during initialization
     update_response = await update_token_data(
@@ -338,7 +337,6 @@ async def fetch_latest_record(oem_id: str = Query(..., description="The OEM ID t
 
 
 async def update_token_data(oem_item_id: str, secret_key: str, generated_token: str, token_type: str, value: int, generated_count: int):
-    print(oem_item_id, secret_key, generated_token, token_type, value, generated_count)
     mutation = """
     mutation updateTokenData($input: UpdateTokenDataInput!) {
         updateTokenData(updateTokenDataInput: $input) {
@@ -368,7 +366,6 @@ async def update_token_data(oem_item_id: str, secret_key: str, generated_token: 
             headers=AUTHORIZATION_HEADER
         )
         response_data = response.json()
-        print("this graphql mutation response", response_data)
         if response_data.get("errors"):
             raise HTTPException(status_code=400, detail=str(response_data["errors"]))
         return response_data["data"]["updateTokenData"]
